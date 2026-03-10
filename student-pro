@@ -1,0 +1,173 @@
+#!/bin/bash
+
+FILE="students.txt"
+
+# Auto create file if not exists
+touch $FILE
+
+# Color Codes
+RED="\e[31m"
+GREEN="\e[32m"
+YELLOW="\e[33m"
+BLUE="\e[34m"
+RESET="\e[0m"
+
+echo -e "${BLUE}====== Student Management System ======${RESET}"
+
+while true
+do
+  echo
+  echo "---------------------------------------"
+  echo "1. Add Student"
+  echo "2. Search Student"
+  echo "3. View All Students"
+  echo "4. Remove Student"
+  echo "5. Exit"
+  echo "---------------------------------------"
+
+  read -p "Enter your choice (1-5): " choice
+  echo
+
+  case $choice in
+
+  1)
+    echo -e "${YELLOW}----- Add Student -----${RESET}"
+    echo
+
+    read -p "Enter Name: " name
+
+    # Roll validation
+    while true
+    do
+      read -p "Enter Roll Number: " roll
+      if [[ $roll =~ ^[0-9]+$ ]]
+      then
+        break
+      else
+        echo -e "${RED}❌ Roll number must be numeric${RESET}"
+      fi
+    done
+
+    # Age validation
+    while true
+    do
+      read -p "Enter Age: " age
+      if [[ $age =~ ^[0-9]+$ ]]
+      then
+        break
+      else
+        echo -e "${RED}❌ Age must be numeric${RESET}"
+      fi
+    done
+
+    # Class validation
+    while true
+    do
+      read -p "Enter Class (1-12): " class
+      if [[ $class =~ ^[0-9]+$ ]] && [ "$class" -ge 1 ] && [ "$class" -le 12 ]
+      then
+        break
+      else
+        echo -e "${RED}❌ Class must be between 1 and 12${RESET}"
+      fi
+    done
+
+    if grep -q ",$roll," $FILE
+    then
+      echo -e "${RED}❌ Roll number already exists${RESET}"
+    else
+      echo "$name,$roll,$age,$class" >> $FILE
+      echo -e "${GREEN}✅ Student added successfully${RESET}"
+    fi
+    ;;
+
+  2)
+    echo -e "${YELLOW}----- Search Student -----${RESET}"
+    echo "1. By Roll Number"
+    echo "2. By Name"
+    echo "3. By Class"
+    echo
+
+    read -p "Choose search option: " s
+    echo
+
+    case $s in
+      1)
+        read -p "Enter Roll Number: " roll
+        result=$(grep ",$roll," $FILE)
+        ;;
+      2)
+        read -p "Enter Name: " name
+        result=$(grep -i "$name" $FILE)
+        ;;
+      3)
+        read -p "Enter Class: " class
+        result=$(grep ",$class$" $FILE)
+        ;;
+      *)
+        echo -e "${RED}❌ Invalid option${RESET}"
+        continue
+        ;;
+    esac
+
+    if [ -z "$result" ]
+    then
+      echo -e "${RED}❌ Student not found${RESET}"
+    else
+      echo
+      printf "%-15s %-10s %-6s %-6s\n" "Name" "RollNo" "Age" "Class"
+      echo "---------------------------------------"
+
+      echo "$result" | while IFS=',' read name roll age class
+      do
+        printf "%-15s %-10s %-6s %-6s\n" "$name" "$roll" "$age" "$class"
+      done
+    fi
+    ;;
+
+  3)
+    echo -e "${YELLOW}----- All Students -----${RESET}"
+    echo
+
+    if [ ! -s $FILE ]
+    then
+      echo -e "${RED}❌ No records found${RESET}"
+    else
+      printf "%-15s %-10s %-6s %-6s\n" "Name" "RollNo" "Age" "Class"
+      echo "---------------------------------------"
+
+      while IFS=',' read name roll age class
+      do
+        printf "%-15s %-10s %-6s %-6s\n" "$name" "$roll" "$age" "$class"
+      done < $FILE
+    fi
+    ;;
+
+  4)
+    echo -e "${YELLOW}----- Remove Student -----${RESET}"
+    echo
+
+    read -p "Enter Roll Number to delete: " roll
+
+    if grep -q ",$roll," $FILE
+    then
+      grep -v ",$roll," $FILE > temp.txt
+      mv temp.txt $FILE
+      echo -e "${GREEN}✅ Student removed successfully${RESET}"
+    else
+      echo -e "${RED}❌ Roll number not found${RESET}"
+    fi
+    ;;
+
+  5)
+    echo -e "${BLUE}👋 Exiting program${RESET}"
+    break
+    ;;
+
+  *)
+    echo -e "${RED}❌ Invalid choice${RESET}"
+    ;;
+
+  esac
+
+done
